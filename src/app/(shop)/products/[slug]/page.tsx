@@ -1,75 +1,146 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 
-export default async function ProductDetailsPage({ params }: { params: { slug: string } }) {
-  const p = await prisma.product.findUnique({
-    where: { slug: params.slug },
+import ProductGallery from "@/components/shop/product-gallery";
+import ProductBuyBox from "@/components/shop/product-buy-box";
+
+export default async function ProductDetailsPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+
+  if (!slug) return notFound();
+
+  const p = await prisma.product.findFirst({
+    where: { slug, isActive: true },
     include: { images: true, variants: true, category: true },
   });
 
-  if (!p || !p.isActive) return notFound();
+  if (!p) return notFound();
+
+  const basePrice = p.offerPrice ?? p.price;
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      <Card className="p-4">
-        <div className="aspect-square overflow-hidden rounded-3xl border border-black/10 bg-white/60">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={p.images[0]?.url || "/placeholder.png"}
-            alt={p.name}
-            className="h-full w-full object-cover"
-          />
-        </div>
+    <div className="mx-auto max-w-6xl px-4 py-10 space-y-6">
+      {/* Breadcrumb */}
+      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+        <Link href="/" className="hover:underline">
+          Home
+        </Link>
+        <span>/</span>
+        <Link href="/products" className="hover:underline">
+          Products
+        </Link>
+        <span>/</span>
+        <span className="text-foreground">{p.name}</span>
+      </div>
 
-        {p.images.length > 1 ? (
-          <div className="mt-3 grid grid-cols-5 gap-2">
-            {p.images.slice(0, 5).map((img) => (
-              <div key={img.id} className="aspect-square overflow-hidden rounded-2xl border border-black/10 bg-white/60">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={img.url} alt={p.name} className="h-full w-full object-cover" />
-              </div>
-            ))}
-          </div>
-        ) : null}
-      </Card>
-
-      <div className="space-y-4">
-        <div>
-          <div className="text-xs text-black/60">{p.category.name}</div>
-          <h1 className="text-2xl font-semibold">{p.name}</h1>
-          <div className="mt-2 flex items-center gap-2">
-            <div className="text-xl font-semibold">৳ {p.offerPrice ?? p.price}</div>
-            {p.offerPrice ? <div className="text-sm text-black/50 line-through">৳ {p.price}</div> : null}
-          </div>
-          <div className="mt-2 text-sm text-black/70">SKU: {p.sku} • Stock: {p.stock}</div>
-        </div>
-
-        {p.description ? (
+      <div className="grid gap-6 lg:grid-cols-12">
+        {/* Left */}
+        <div className="lg:col-span-8 space-y-4">
           <Card className="p-4">
-            <div className="text-sm font-semibold">Description</div>
-            <p className="mt-2 text-sm text-black/70 whitespace-pre-line">{p.description}</p>
+            <ProductGallery images={p.images} name={p.name} />
           </Card>
-        ) : null}
 
-        {p.variants.length ? (
-          <Card className="p-4">
-            <div className="text-sm font-semibold">Variants</div>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {p.variants.map((v) => (
-                <div
-                  key={v.id}
-                  className="rounded-2xl border border-black/10 bg-white/60 px-3 py-2 text-sm"
-                >
-                  <span className="font-medium">{v.type}</span>: {v.value}
-                </div>
-              ))}
+          <Card className="p-4 space-y-3">
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">
+                {p.category?.name ?? "Uncategorized"}
+              </p>
+              <h1 className="text-2xl font-bold tracking-tight">{p.name}</h1>
+              <p className="text-sm text-muted-foreground">
+                SKU: {p.sku} • Stock: {p.stock}
+              </p>
             </div>
-          </Card>
-        ) : null}
 
-        <Button>Add to Cart (Day 4)</Button>
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <p className="font-semibold text-lg">৳ {basePrice}</p>
+                {p.offerPrice ? (
+                  <p className="text-xs text-muted-foreground line-through">
+                    ৳ {p.price}
+                  </p>
+                ) : null}
+              </div>
+
+              {p.isFeatured ? (
+                <span className="text-xs rounded-full border px-2 py-1 bg-black/5">
+                  Featured
+                </span>
+              ) : null}
+            </div>
+
+            {p.description ? (
+              <div className="space-y-2">
+                <p className="font-medium">Description</p>
+                <p className="text-sm text-muted-foreground whitespace-pre-line">
+                  {p.description}
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No description added yet.
+              </p>
+            )}
+
+            {p.variants.length ? (
+              <div className="space-y-2">
+                <p className="font-medium">Available Variants</p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {p.variants.map((v) => (
+                    <Card key={v.id} className="p-3">
+                      <p className="text-sm font-medium">
+                        {v.type}: {v.value}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Price diff: ৳ {v.priceDiff ?? 0}
+                      </p>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </Card>
+        </div>
+
+        {/* Right (Sticky buy box) */}
+        <div className="lg:col-span-4">
+          <div className="lg:sticky lg:top-6 space-y-4">
+            <Card className="p-4">
+              <ProductBuyBox
+                productId={p.id}
+                name={p.name}
+                sku={p.sku}
+                basePrice={basePrice}
+                stock={p.stock}
+                variants={p.variants}
+                imageUrl={p.images?.[0]?.url ?? null}
+              />
+            </Card>
+
+            <Card className="p-4 space-y-2">
+              <p className="font-medium">Delivery & Support</p>
+              <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-5">
+                <li>Nationwide courier delivery</li>
+                <li>Phone support for product guidance</li>
+                <li>Secure checkout (next step)</li>
+              </ul>
+            </Card>
+
+            <Card className="p-4">
+              <Link
+                href="/products"
+                className="inline-flex items-center justify-center h-11 px-5 rounded-2xl border bg-background hover:bg-black/5 transition w-full"
+              >
+                Back to Products
+              </Link>
+            </Card>
+          </div>
+        </div>
       </div>
     </div>
   );

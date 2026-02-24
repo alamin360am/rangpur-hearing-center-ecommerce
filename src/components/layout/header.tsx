@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search, Heart, ShoppingBag, User2, LayoutDashboard } from "lucide-react";
+import { Search, Heart, User2, LayoutDashboard } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/cn";
 import { useSession } from "next-auth/react";
+import CartBadge from "../shop/cart-badge";
 
 export function Header() {
   const pathname = usePathname();
@@ -49,9 +50,7 @@ export function Header() {
           <Link className="rounded-2xl p-2 hover:bg-black/5" href="/wishlist" aria-label="Wishlist">
             <Heart className="h-5 w-5" />
           </Link>
-          <Link className="rounded-2xl p-2 hover:bg-black/5" href="/cart" aria-label="Cart">
-            <ShoppingBag className="h-5 w-5" />
-          </Link>
+            <CartBadge />
           <Link className="rounded-2xl p-2 hover:bg-black/5" href="/login" aria-label="Account">
             <User2 className="h-5 w-5" />
           </Link>

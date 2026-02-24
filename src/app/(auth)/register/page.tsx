@@ -11,7 +11,7 @@ import { useToast } from "@/components/ui/toast";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { push } = useToast();
+  const { toast } = useToast();
 
   const [loading, setLoading] = React.useState(false);
   const [name, setName] = React.useState("");
@@ -32,11 +32,11 @@ export default function RegisterPage() {
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      push({ title: "Signup failed", description: data?.error || "Try again." });
+      toast({ title: "Signup failed", variant: "error", description: data?.error || "Try again." });
       return;
     }
 
-    push({ title: "Account created", description: "Logging you in..." });
+    toast({ title: "Account created", variant:"success", description: "Logging you in..." });
     await signIn("credentials", { email, password, redirect: false });
     router.push("/");
   }

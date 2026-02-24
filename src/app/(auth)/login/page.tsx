@@ -13,7 +13,7 @@ export default function LoginPage() {
   const router = useRouter();
   const sp = useSearchParams();
   const next = sp.get("next") || "/";
-  const { push } = useToast();
+  const { toast } = useToast();
 
   const [loading, setLoading] = React.useState(false);
   const [email, setEmail] = React.useState("");
@@ -32,11 +32,11 @@ export default function LoginPage() {
     setLoading(false);
 
     if (!res?.ok) {
-      push({ title: "Login failed", description: "Check email/password or account blocked." });
+      toast({ title: "Login failed", variant: "error", description: "Check email/password or account blocked." });
       return;
     }
 
-    push({ title: "Welcome back!", description: "Login successful." });
+    toast({ title: "Welcome back!", variant: "success", description: "Login successful." });
     router.push(next);
   }
 
